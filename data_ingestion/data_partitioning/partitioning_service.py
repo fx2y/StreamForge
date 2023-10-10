@@ -4,18 +4,25 @@ from data_ingestion.data_partitioning.partitioning_metadata import PartitioningM
 
 
 class PartitioningService:
-    def __init__(self, nodes, replicas=3):
+    def __init__(self, nodes, replicas=3, replication_factor=2):
         self.consistent_hashing = ConsistentHashing(nodes, replicas)
         self.partitioning_metadata = PartitioningMetadata()
         self.node_discovery = NodeDiscovery()
+        self.replication_factor = replication_factor
 
     def add_partition(self, partition_id):
         node_id = self.consistent_hashing.get_node(partition_id)
         self.partitioning_metadata.add_partition(partition_id, node_id, self.consistent_hashing.replicas)
+        for i in range(1, self.replication_factor):
+            replica_node_id = self.consistent_hashing.get_node(f"{partition_id}:{i}")
+            self.partitioning_metadata.add_partition(partition_id, replica_node_id, self.consistent_hashing.replicas)
 
     def remove_partition(self, partition_id):
         node_id = self.get_partition_node(partition_id)
         self.partitioning_metadata.remove_partition(partition_id, node_id)
+        for i in range(1, self.replication_factor):
+            replica_node_id = self.get_partition_node(f"{partition_id}:{i}")
+            self.partitioning_metadata.remove_partition(partition_id, replica_node_id)
 
     def get_partition_node(self, partition_id):
         return self.consistent_hashing.get_node(partition_id)
