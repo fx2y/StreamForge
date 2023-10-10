@@ -42,7 +42,7 @@ class PartitioningService:
     def add_node(self, node_id):
         self.node_discovery.add_node(node_id)
         self.consistent_hashing.add_node(node_id)
-        self.consistent_hashing.ring[self.consistent_hashing.hash(node_id)] = node_id
+        self.rebalance_partitions()
 
     def remove_node(self, node_id):
         self.node_discovery.remove_node(node_id)
@@ -51,6 +51,7 @@ class PartitioningService:
             if node_id in node:
                 del node[node_id]
                 self.add_partition(partition_id)
+        self.rebalance_partitions()
 
     def detect_node_failure(self, node_id):
         if node_id not in self.node_discovery.nodes:
@@ -61,6 +62,35 @@ class PartitioningService:
         if node_id in self.node_discovery.nodes:
             return
         self.add_node(node_id)
+
+    def rebalance_partitions(self):
+        nodes = list(self.node_discovery.nodes)
+        nodes_count = len(nodes)
+        if nodes_count == 0:
+            return
+        partitions = list(self.partitioning_metadata.metadata.keys())
+        partitions_count = len(partitions)
+        if partitions_count == 0:
+            return
+        partitions_per_node = partitions_count // nodes_count
+        partitions_per_node_plus_one = partitions_count % nodes_count
+        node_partitions = dict()
+        for i in range(nodes_count):
+            node_partitions[nodes[i]] = set()
+            for j in range(partitions_per_node):
+                partition_id = partitions[i * partitions_per_node + j]
+                node_partitions[nodes[i]].add(partition_id)
+            if i < partitions_per_node_plus_one:
+                partition_id = partitions[nodes_count * partitions_per_node + i]
+                node_partitions[nodes[i]].add(partition_id)
+        for node_id, partitions in node_partitions.items():
+            current_partitions = set(self.partitioning_metadata.get_node_partitions(node_id).keys())
+            partitions_to_add = partitions - current_partitions
+            partitions_to_remove = current_partitions - partitions
+            for partition_id in partitions_to_add:
+                self.add_partition(partition_id)
+            for partition_id in partitions_to_remove:
+                self.remove_partition(partition_id)
 
 
 if __name__ == '__main__':
