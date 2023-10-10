@@ -22,6 +22,14 @@ class ConsistentHashing:
                 return self.ring[node]
         return self.ring[min(self.ring.keys())]
 
+    def get_node_from_hash(self, hash_key):
+        if not self.ring:
+            return None
+        for node in sorted(self.ring.keys()):
+            if hash_key <= node:
+                return self.ring[node]
+        return self.ring[min(self.ring.keys())]
+
     def add_node(self, node):
         for i in range(self.replicas):
             key = self.hash(f"{node}:{i}")
