@@ -1,6 +1,6 @@
-import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+import ujson
 from gunicorn.app.base import BaseApplication
 
 
@@ -62,7 +62,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
 
 class JSONDeserializer:
     def __call__(self, data):
-        return json.loads(data.decode())
+        return ujson.loads(data.decode())
 
 
 if __name__ == '__main__':
