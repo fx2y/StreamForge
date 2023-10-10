@@ -1,11 +1,6 @@
 from kafka import KafkaConsumer
 
-
-# Deserializer class for deserializing data
-class Deserializer:
-    def deserialize(self, data):
-        # implement deserialization logic here
-        return data
+from deserializer import Deserializer
 
 
 def receive_data_from_kafka(topic_name):
