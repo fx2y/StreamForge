@@ -5,9 +5,10 @@ from gunicorn.app.base import BaseApplication
 
 
 class HTTPAdapter:
-    def __init__(self, port, deserializer):
+    def __init__(self, port, deserializer, converter):
         self.port = port
         self.deserializer = deserializer
+        self.converter = converter
 
     def start(self):
         class HTTPApplication(BaseApplication):
@@ -38,6 +39,7 @@ class HTTPAdapter:
 class HTTPHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         self.deserializer = kwargs.pop('deserializer')
+        self.converter = kwargs.pop('converter')
         super().__init__(*args, **kwargs)
 
     def deserialize_data(self, data):
@@ -50,6 +52,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
         # Add deserialization logic here
         try:
             deserialized_data = self.deserialize_data(data)
+            converted_data = self.converter(deserialized_data)
             self.send_response(200)
         except Exception as e:
             self.send_response(400)
@@ -65,6 +68,12 @@ class JSONDeserializer:
         return ujson.loads(data.decode())
 
 
+class CommonToTargetConverter:
+    def __call__(self, data):
+        # Add conversion logic here
+        return data
+
+
 if __name__ == '__main__':
-    http_adapter = HTTPAdapter(8080, JSONDeserializer)
+    http_adapter = HTTPAdapter(8080, JSONDeserializer, CommonToTargetConverter)
     http_adapter.start()
