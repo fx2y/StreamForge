@@ -1,6 +1,8 @@
+import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import ujson
+from cassandra.cluster import Cluster
 from gunicorn.app.base import BaseApplication
 
 
@@ -79,10 +81,15 @@ class CommonToTargetConverter:
 
 class DistributedLog:
     def __init__(self):
-        self.log = []
+        self.cluster = Cluster(['127.0.0.1'])
+        self.session = self.cluster.connect()
+        self.session.execute(
+            "CREATE KEYSPACE IF NOT EXISTS mykeyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3'}")
+        self.session.execute("CREATE TABLE IF NOT EXISTS mykeyspace.mytable (id uuid PRIMARY KEY, data text)")
 
     def append(self, data):
-        self.log.append(data)
+        id = uuid.uuid1()
+        self.session.execute("INSERT INTO mykeyspace.mytable (id, data) VALUES (%s, %s)", (id, data))
 
 
 if __name__ == '__main__':
