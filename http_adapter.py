@@ -5,8 +5,9 @@ from gunicorn.app.base import BaseApplication
 
 
 class HTTPAdapter:
-    def __init__(self, port):
+    def __init__(self, port, deserializer):
         self.port = port
+        self.deserializer = deserializer
 
     def start(self):
         class HTTPApplication(BaseApplication):
@@ -35,9 +36,13 @@ class HTTPAdapter:
 
 
 class HTTPHandler(BaseHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        self.deserializer = kwargs.pop('deserializer')
+        super().__init__(*args, **kwargs)
+
     def deserialize_data(self, data):
         # Add deserialization logic here
-        return json.loads(data.decode())
+        return self.deserializer(data)
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
@@ -55,6 +60,11 @@ class HTTPHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
 
+class JSONDeserializer:
+    def __call__(self, data):
+        return json.loads(data.decode())
+
+
 if __name__ == '__main__':
-    http_adapter = HTTPAdapter(8080)
+    http_adapter = HTTPAdapter(8080, JSONDeserializer)
     http_adapter.start()
