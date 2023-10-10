@@ -1,4 +1,4 @@
-import hashlib
+import xxhash
 
 
 class ConsistentHashing:
@@ -11,7 +11,7 @@ class ConsistentHashing:
                 self.ring[key] = node
 
     def hash(self, key):
-        return int(hashlib.sha1(key.encode()).hexdigest(), 16)
+        return xxhash.xxh64(key).intdigest()
 
     def get_node(self, key):
         if not self.ring:
