@@ -1,4 +1,5 @@
-from http.server import BaseHTTPRequestHandler
+import json
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from gunicorn.app.base import BaseApplication
 
@@ -29,10 +30,15 @@ class HTTPAdapter:
         }
 
         # use gunicorn
-        HTTPApplication(HTTPRequestHandler, options).run()
+        HTTPApplication(HTTPServer((options['bind'].split(':')[0], int(options['bind'].split(':')[1])), HTTPHandler),
+                        options).run()
 
 
-class HTTPRequestHandler(BaseHTTPRequestHandler):
+class HTTPHandler(BaseHTTPRequestHandler):
+    def deserialize_data(self, data):
+        # Add deserialization logic here
+        return json.loads(data.decode())
+
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         data = self.rfile.read(content_length)
@@ -47,10 +53,6 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(str(e).encode())
         else:
             self.end_headers()
-
-    def deserialize_data(self, data):
-        # Add deserialization logic here
-        return data
 
 
 if __name__ == '__main__':
