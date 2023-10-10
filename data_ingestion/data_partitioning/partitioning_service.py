@@ -1,4 +1,5 @@
 from data_ingestion.data_partitioning.consistent_hashing import ConsistentHashing
+from data_ingestion.data_partitioning.node_discovery import NodeDiscovery
 from data_ingestion.data_partitioning.partitioning_metadata import PartitioningMetadata
 
 
@@ -6,6 +7,7 @@ class PartitioningService:
     def __init__(self, nodes, replicas=3):
         self.consistent_hashing = ConsistentHashing(nodes, replicas)
         self.partitioning_metadata = PartitioningMetadata()
+        self.node_discovery = NodeDiscovery()
 
     def add_partition(self, partition_id):
         node_id = self.consistent_hashing.get_node(partition_id)
@@ -37,6 +39,19 @@ class PartitioningService:
             node_id = least_loaded_node
         return node_id
 
+    def add_node(self, node_id):
+        self.node_discovery.add_node(node_id)
+        self.consistent_hashing.add_node(node_id)
+        self.consistent_hashing.ring[self.consistent_hashing.hash(node_id)] = node_id
+
+    def remove_node(self, node_id):
+        self.node_discovery.remove_node(node_id)
+        self.consistent_hashing.remove_node(node_id)
+        for partition_id, node in self.partitioning_metadata.metadata.items():
+            if node_id in node:
+                del node[node_id]
+                self.add_partition(partition_id)
+
 
 if __name__ == '__main__':
     # Create an instance of the PartitioningService class
@@ -62,3 +77,9 @@ if __name__ == '__main__':
 
     # Get the node that should store a partition based on a load balancing strategy that distributes the partitions evenly across the nodes
     node_id_balanced = partitioning_service.get_partition_node_balanced(partition_id)
+
+    # Add some nodes to the cluster
+    partitioning_service.add_node("node4")
+
+    # Remove a node from the cluster
+    partitioning_service.remove_node("node1")
