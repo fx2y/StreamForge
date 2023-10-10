@@ -5,10 +5,11 @@ from gunicorn.app.base import BaseApplication
 
 
 class HTTPAdapter:
-    def __init__(self, port, deserializer, converter):
+    def __init__(self, port, deserializer, converter, distributed_log):
         self.port = port
         self.deserializer = deserializer
         self.converter = converter
+        self.distributed_log = distributed_log
 
     def start(self):
         class HTTPApplication(BaseApplication):
@@ -40,6 +41,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         self.deserializer = kwargs.pop('deserializer')
         self.converter = kwargs.pop('converter')
+        self.distributed_log = kwargs.pop('distributed_log')
         super().__init__(*args, **kwargs)
 
     def deserialize_data(self, data):
@@ -53,6 +55,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
         try:
             deserialized_data = self.deserialize_data(data)
             converted_data = self.converter(deserialized_data)
+            self.distributed_log.append(converted_data)
             self.send_response(200)
         except Exception as e:
             self.send_response(400)
@@ -74,6 +77,15 @@ class CommonToTargetConverter:
         return data
 
 
+class DistributedLog:
+    def __init__(self):
+        self.log = []
+
+    def append(self, data):
+        self.log.append(data)
+
+
 if __name__ == '__main__':
-    http_adapter = HTTPAdapter(8080, JSONDeserializer, CommonToTargetConverter)
+    distributed_log = DistributedLog()
+    http_adapter = HTTPAdapter(8080, JSONDeserializer, CommonToTargetConverter, distributed_log)
     http_adapter.start()
