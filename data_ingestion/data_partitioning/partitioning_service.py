@@ -52,6 +52,16 @@ class PartitioningService:
                 del node[node_id]
                 self.add_partition(partition_id)
 
+    def detect_node_failure(self, node_id):
+        if node_id not in self.node_discovery.nodes:
+            return
+        self.remove_node(node_id)
+
+    def recover_node(self, node_id):
+        if node_id in self.node_discovery.nodes:
+            return
+        self.add_node(node_id)
+
 
 if __name__ == '__main__':
     # Create an instance of the PartitioningService class
