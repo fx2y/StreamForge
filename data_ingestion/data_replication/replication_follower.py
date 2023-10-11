@@ -90,3 +90,10 @@ class ReplicationFollower:
         """
         if not self.leader.is_alive():
             self.handle_failures()
+
+    def detect_network_partition(self):
+        """
+        Detect a network partition by pinging the leader and checking if it is still alive.
+        """
+        if not self.leader.is_alive():
+            self.handle_network_partitions()
