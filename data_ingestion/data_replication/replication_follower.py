@@ -97,3 +97,9 @@ class ReplicationFollower:
         """
         if not self.leader.is_alive():
             self.handle_network_partitions()
+
+    def provide_consistent_view(self):
+        """
+        Provide a consistent view of the data by returning the local log.
+        """
+        return self.local_log[:]
