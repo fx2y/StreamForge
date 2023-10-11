@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 from partitioning_service import PartitioningService
 
@@ -28,6 +28,28 @@ def get_least_loaded_node():
 def get_partition_node(partition_id):
     node_id = partitioning_service.get_partition_node(partition_id)
     return jsonify(node_id)
+
+
+@app.route('/api/query', methods=['POST'])
+def query():
+    data = request.get_json()
+    query_type = data.get('type')
+    if query_type == 'metadata':
+        metadata = partitioning_service.partitioning_metadata.metadata
+        return jsonify(metadata)
+    elif query_type == 'node_partitions':
+        node_id = data.get('node_id')
+        partitions = partitioning_service.get_node_partitions(node_id)
+        return jsonify(partitions)
+    elif query_type == 'least_loaded_node':
+        node = partitioning_service.get_least_loaded_node()
+        return jsonify(node)
+    elif query_type == 'partition_node':
+        partition_id = data.get('partition_id')
+        node_id = partitioning_service.get_partition_node(partition_id)
+        return jsonify(node_id)
+    else:
+        return jsonify({'error': 'Invalid query type'})
 
 
 if __name__ == '__main__':
