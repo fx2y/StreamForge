@@ -1,4 +1,5 @@
 import time
+import zlib
 
 
 class ReplicationProtocol:
@@ -19,8 +20,9 @@ class ReplicationProtocol:
             time.sleep(1)
 
     def send_data(self, data):
+        compressed_data = zlib.compress(data.encode())
         batch = []
-        for record in data:
+        for record in compressed_data:
             batch.append(record)
             if len(batch) == self.batch_size:
                 self.leader.send_batch(batch)
@@ -34,7 +36,8 @@ class ReplicationProtocol:
                 replica.receive_batch(batch)
 
     def receive_data(self, data):
-        # Store data in local log
+        decompressed_data = zlib.decompress(data)
+        # Store decompressed data in local log
         pass
 
     def detect_failures(self):
