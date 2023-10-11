@@ -155,3 +155,23 @@ class ReplicationLeader:
         """
         # Get data buffer from local log
         return Manager().list()
+
+    def set_batch_size(self, batch_size):
+        """
+        Set the batch size for sending data to the replicas.
+        """
+        self.batch_size = batch_size
+
+    def batch_data(self, data):
+        """
+        Batch data records into a single message to reduce network overhead.
+        """
+        compressed_data = zlib.compress(data.encode())
+        batch = []
+        for record in compressed_data:
+            batch.append(record)
+            if len(batch) == self.batch_size:
+                self.data_buffer.append(batch)
+                batch = []
+        if batch:
+            self.data_buffer.append(batch)
