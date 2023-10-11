@@ -17,7 +17,7 @@ class ReplicationLeader:
         """
         Receive data from the data source adapters and send it to the other replicas.
         """
-        compressed_data = zlib.compress(data.encode())
+        compressed_data = self._compress_data(data)
         batch = []
         for record in compressed_data:
             batch.append((self.sequence_number, record))
@@ -28,6 +28,12 @@ class ReplicationLeader:
         if batch:
             self.data_buffer.append(batch)
         self._send_data()
+
+    def _compress_data(self, data):
+        """
+        Compress data to reduce network bandwidth usage.
+        """
+        return zlib.compress(data.encode())
 
     def _send_data(self):
         """
@@ -166,7 +172,7 @@ class ReplicationLeader:
         """
         Batch data records into a single message to reduce network overhead.
         """
-        compressed_data = zlib.compress(data.encode())
+        compressed_data = self._compress_data(data)
         batch = []
         for record in compressed_data:
             batch.append(record)
