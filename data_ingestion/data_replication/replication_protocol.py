@@ -31,3 +31,17 @@ class ReplicationProtocol:
             if replica != self.leader:
                 if not replica.is_alive():
                     self.replicas.remove(replica)
+
+    def handle_network_partitions(self):
+        for replica in self.replicas:
+            if replica != self.leader:
+                if not self.leader.can_communicate_with(replica):
+                    self.replicas.remove(replica)
+
+    def recover_from_failures(self):
+        if not self.leader.is_alive():
+            self.elect_leader()
+        for replica in self.replicas:
+            if replica != self.leader:
+                if not replica.is_alive():
+                    self.replicas.remove(replica)
