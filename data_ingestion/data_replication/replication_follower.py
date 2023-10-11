@@ -38,7 +38,7 @@ class ReplicationFollower:
             if sequence_number == self.last_sequence_number + 1:
                 decompressed_data = zlib.decompress(record)
                 # Store decompressed data in local log
-                self.local_log.append(decompressed_data)
+                self.local_log.append((sequence_number, decompressed_data))
                 self.last_sequence_number = sequence_number
             elif sequence_number > self.last_sequence_number + 1:
                 self.leader.recover()
