@@ -16,3 +16,12 @@ class ReplicationProtocol:
                 if replica != self.leader:
                     replica.receive_heartbeat()
             time.sleep(1)
+
+    def send_data(self, data):
+        for replica in self.replicas:
+            if replica != self.leader:
+                replica.receive_data(data)
+
+    def receive_data(self, data):
+        # Store data in local log
+        pass
