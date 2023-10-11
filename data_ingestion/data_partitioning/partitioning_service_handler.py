@@ -26,7 +26,7 @@ def get_least_loaded_node():
 
 @app.route('/metadata/partitions/<partition_id>/node')
 def get_partition_node(partition_id):
-    node_id = partitioning_service.get_partition_node(partition_id)
+    node_id = partitioning_service.get_partition_node_balanced(partition_id)
     return jsonify(node_id)
 
 
@@ -46,7 +46,7 @@ def query():
         return jsonify(node)
     elif query_type == 'partition_node':
         partition_id = data.get('partition_id')
-        node_id = partitioning_service.get_partition_node(partition_id)
+        node_id = partitioning_service.get_partition_node_balanced(partition_id)
         return jsonify(node_id)
     else:
         return jsonify({'error': 'Invalid query type'})
