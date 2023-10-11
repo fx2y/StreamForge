@@ -1,6 +1,7 @@
 import zlib
 from multiprocessing import Manager
 
+
 class ReplicationFollower:
     def __init__(self, leader):
         """
@@ -66,3 +67,11 @@ class ReplicationFollower:
         Ping the leader to check if it is still alive.
         """
         return True
+
+    def handle_backpressure(self):
+        """
+        Handle backpressure by waiting for the local log to have enough space.
+        """
+        while len(self.local_log) > len(
+                self.leader.replicas) * 100:  # Set threshold to 100 records per replica for example purposes
+            pass
