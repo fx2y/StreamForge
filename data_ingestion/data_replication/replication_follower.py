@@ -3,13 +3,32 @@ from multiprocessing import Manager
 
 
 class ReplicationFollower:
-    def __init__(self, leader):
+    def __init__(self, leader, batch_size=100):
         """
-        Initialize the replication follower with a reference to the replication leader.
+        Initialize the replication follower with a reference to the replication leader and a batch size.
         """
         self.leader = leader
         self.local_log = Manager().list()
         self.last_sequence_number = -1
+        self.batch_size = batch_size
+        self.batch = []
+
+    def receive_record(self, sequence_number, record):
+        """
+        Receive a record from the replication leader and add it to the current batch.
+        """
+        self.batch.append((sequence_number, record))
+        if len(self.batch) == self.batch_size:
+            self._process_batch()
+
+    def _process_batch(self):
+        """
+        Compress and send the current batch to the local log.
+        """
+        compressed_batch = [(sequence_number, zlib.compress(record)) for sequence_number, record in self.batch]
+        self.local_log.extend(compressed_batch)
+        self.last_sequence_number = self.batch[-1][0]
+        self.batch = []
 
     def receive_batch(self, batch):
         """
