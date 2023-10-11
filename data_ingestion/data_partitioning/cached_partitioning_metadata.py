@@ -23,6 +23,8 @@ class CachedPartitioningMetadata:
             timestamp, nodes = self.cache[partition_id]
             if time.time() - timestamp <= self.cache_ttl:
                 return nodes
+            else:
+                del self.cache[partition_id]
         nodes = self.metadata.get_partition_nodes(partition_id)
         self.cache[partition_id] = (time.time(), nodes)
         self.evict_cache()
@@ -33,6 +35,8 @@ class CachedPartitioningMetadata:
             timestamp, partitions = self.cache[node_id]
             if time.time() - timestamp <= self.cache_ttl:
                 return partitions
+            else:
+                del self.cache[node_id]
         partitions = self.metadata.get_node_partitions(node_id)
         self.cache[node_id] = (time.time(), partitions)
         self.evict_cache()
@@ -43,6 +47,8 @@ class CachedPartitioningMetadata:
             timestamp, replicas = self.cache[partition_id]
             if time.time() - timestamp <= self.cache_ttl:
                 return replicas
+            else:
+                del self.cache[partition_id]
         replicas = self.metadata.get_partition_replicas(partition_id)
         self.cache[partition_id] = (time.time(), replicas)
         self.evict_cache()
