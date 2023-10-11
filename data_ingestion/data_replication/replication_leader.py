@@ -88,3 +88,12 @@ class ReplicationLeader:
         """
         return len(self.data_buffer) > len(
             self.replicas) * 10  # Set threshold to 10 batches per replica for example purposes
+
+    def handle_failures(self):
+        """
+        Handle failures of the followers and remove them from the replication group.
+        """
+        for replica in self.replicas:
+            if replica != self:
+                if not replica.is_alive():
+                    self.replicas.remove(replica)
