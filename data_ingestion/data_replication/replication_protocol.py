@@ -1,5 +1,6 @@
 import time
 import zlib
+from multiprocessing import Pool
 
 
 class ReplicationProtocol:
@@ -31,9 +32,11 @@ class ReplicationProtocol:
             self.leader.send_batch(batch)
 
     def receive_batch(self, batch):
-        for replica in self.replicas:
-            if replica != self.leader:
-                replica.receive_batch(batch)
+        with Pool(len(self.replicas)) as p:
+            p.map(self._receive_batch, [(replica, batch) for replica in self.replicas if replica != self.leader])
+
+    def _receive_batch(self, replica, batch):
+        replica.receive_batch(batch)
 
     def receive_data(self, data):
         decompressed_data = zlib.decompress(data)
