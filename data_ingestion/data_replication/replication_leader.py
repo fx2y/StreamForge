@@ -82,13 +82,6 @@ class ReplicationLeader:
             if replica != self:
                 replica.receive_acknowledgement(self.replicas.index(self), batch[-1][0])
 
-    def backpressure(self):
-        """
-        Check if the leader should apply backpressure to avoid overwhelming the followers.
-        """
-        return len(self.data_buffer) > len(
-            self.replicas) * 10  # Set threshold to 10 batches per replica for example purposes
-
     def handle_failures(self):
         """
         Handle failures of the followers and remove them from the replication group.
@@ -97,3 +90,47 @@ class ReplicationLeader:
             if replica != self:
                 if not replica.is_alive():
                     self.replicas.remove(replica)
+
+    def handle_network_partitions(self):
+        """
+        Handle network partitions and ensure that all replicas can still communicate with each other.
+        """
+        for replica in self.replicas:
+            if replica != self:
+                if not self._can_communicate(replica):
+                    self.replicas.remove(replica)
+
+    def _can_communicate(self, replica):
+        """
+        Check if the leader can communicate with a replica.
+        """
+        try:
+            with Manager() as manager:
+                shared_sequence_number = manager.Value('i', self.sequence_number)
+                with Pool(1) as p:
+                    p.map(self._ping_replica, [(replica, shared_sequence_number)])
+            return True
+        except:
+            return False
+
+    def _ping_replica(self, replica, shared_sequence_number):
+        """
+        Ping a replica to check if it can communicate with the leader.
+        """
+        replica.ping(shared_sequence_number.value)
+
+    def ping(self, sequence_number):
+        """
+        Receive a ping from a replica to check if it can communicate with the leader.
+        """
+        if sequence_number == self.sequence_number:
+            return True
+        else:
+            raise Exception('Sequence number mismatch')
+
+    def backpressure(self):
+        """
+        Check if the leader should apply backpressure to avoid overwhelming the followers.
+        """
+        return len(self.data_buffer) > len(
+            self.replicas) * 10  # Set threshold to 10 batches per replica for example purposes
