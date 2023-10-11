@@ -52,3 +52,6 @@ class CachedPartitioningMetadata:
         if len(self.cache) > self.cache_size:
             oldest_key = min(self.cache.keys(), key=lambda k: self.cache[k][0])
             del self.cache[oldest_key]
+
+    def refresh_cache(self):
+        self.cache.clear()
