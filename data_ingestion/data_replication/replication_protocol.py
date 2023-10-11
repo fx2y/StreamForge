@@ -25,3 +25,9 @@ class ReplicationProtocol:
     def receive_data(self, data):
         # Store data in local log
         pass
+
+    def detect_failures(self):
+        for replica in self.replicas:
+            if replica != self.leader:
+                if not replica.is_alive():
+                    self.replicas.remove(replica)
