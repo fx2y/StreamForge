@@ -181,3 +181,22 @@ class ReplicationLeader:
                 batch = []
         if batch:
             self.data_buffer.append(batch)
+
+    def distribute_workload(self):
+        """
+        Distribute the workload across multiple nodes to increase throughput.
+        """
+        with Pool(len(self.replicas)) as p:
+            p.map(self._batch_data, [(replica, self.data_buffer) for replica in self.replicas if replica != self])
+
+    def _batch_data(self, replica, data_buffer):
+        """
+        Batch data records into a single message and send it to a replica to reduce network overhead.
+        """
+        batch = []
+        for i in range(len(data_buffer)):
+            if i % (len(self.replicas) - 1) == self.replicas.index(replica):
+                batch.extend(data_buffer[i])
+        if batch:
+            replica.receive_batch([(self.sequence_number + i, record) for i, record in enumerate(batch)])
+            self.sequence_number += len(batch)
