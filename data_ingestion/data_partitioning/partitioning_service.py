@@ -4,9 +4,9 @@ from data_ingestion.data_partitioning.partitioning_metadata import PartitioningM
 
 
 class PartitioningService:
-    def __init__(self, nodes, replicas=3, replication_factor=2):
+    def __init__(self, nodes, db_file, replicas=3, replication_factor=2):
         self.consistent_hashing = ConsistentHashing(nodes, replicas)
-        self.partitioning_metadata = PartitioningMetadata()
+        self.partitioning_metadata = PartitioningMetadata(db_file)
         self.node_discovery = NodeDiscovery()
         self.replication_factor = replication_factor
 
@@ -104,7 +104,9 @@ if __name__ == '__main__':
     # Create an instance of the PartitioningService class
     nodes = ["node1", "node2", "node3"]
     replicas = 3
-    partitioning_service = PartitioningService(nodes, replicas)
+    db_file = "streamforge.db"
+
+    partitioning_service = PartitioningService(nodes, db_file, replicas)
 
     # Add a partition to the system
     partition_id = "partition1"
