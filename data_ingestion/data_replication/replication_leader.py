@@ -81,3 +81,10 @@ class ReplicationLeader:
         for replica in self.replicas:
             if replica != self:
                 replica.receive_acknowledgement(self.replicas.index(self), batch[-1][0])
+
+    def backpressure(self):
+        """
+        Check if the leader should apply backpressure to avoid overwhelming the followers.
+        """
+        return len(self.data_buffer) > len(
+            self.replicas) * 10  # Set threshold to 10 batches per replica for example purposes
